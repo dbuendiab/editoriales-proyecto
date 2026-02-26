@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Base de datos SQLite (no versionar — hacer backups manuales)
+data/*.db
+
+# Documento original de editoriales (autor externo, no redistribuir)
+data/editoriales01.docx
+
+# Archivo de proyecto SQLite Browser
+data/editoriales.sqbpro
+
+# Scripts de migración ya aplicados
+app/apply_migration*.py
+app/migration_*.py
+app/migration_*.sql
+
+# Script de generación del sample (uso único)
+crear_sample.py
+
+# Variables de entorno (contienen API keys)
+.env
+
+# Backups
+*.backup.db
+*.bak
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Flask
+instance/
+.webassets-cache
+
+# Claude Code
+.claude/

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Envíos - Editoriales</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>📚 Gestión de Envío de Manuscritos</h1>
+                    <div class="stats-bar" id="stats-bar">
+                        Cargando estadísticas...
+                    </div>
+                </div>
+                <button id="btn-config" class="btn-config" title="Configuración">⚙️</button>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-button active" data-bloque="todos">Todas</button>
+            <button class="tab-button" data-bloque="A">Bloque A <span class="badge" id="badge-A">0</span></button>
+            <button class="tab-button" data-bloque="B">Bloque B <span class="badge" id="badge-B">0</span></button>
+            <button class="tab-button" data-bloque="C">Bloque C <span class="badge" id="badge-C">0</span></button>
+            <button class="tab-button" data-bloque="D">Bloque D <span class="badge" id="badge-D">0</span></button>
+        </nav>
+
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="🔍 Buscar editorial..." autocomplete="off">
+                <button id="btn-clear-search" class="btn-clear-search" title="Limpiar búsqueda" style="display: none;">✕</button>
+            </div>
+            <div class="filters">
+                <select id="filter-estado">
+                    <option value="">Todos los estados</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="en-proceso">En proceso</option>
+                    <option value="finalizado">Finalizado</option>
+                    <option value="descartado">Descartado</option>
+                </select>
+                <button id="btn-nueva-editorial" class="btn-primary" title="Crear nueva editorial">
+                    ➕ Nueva Editorial
+                </button>
+                <button id="btn-normalizar" class="btn-secondary">Normalizar orden</button>
+                <button id="btn-ordenar-prioridad" class="btn-secondary" title="Ordenar por Prioridad IA (mayor a menor)">
+                    🎯 Ordenar por Prioridad
+                </button>
+                <button id="btn-ordenar-probabilidad" class="btn-secondary" title="Ordenar por Probabilidad de Aceptación (mayor a menor)">
+                    🎲 Ordenar por Probabilidad
+                </button>
+                <button id="btn-analizar-todas" class="btn-ia" title="Analizar todas las editoriales con IA">
+                    🤖 Analizar Todas
+                </button>
+                <button id="btn-asignar-bloques" class="btn-secondary" title="Asignar bloques automáticamente según análisis IA" onclick="asignarBloquesAutomaticamente()">
+                    📊 Asignar Bloques
+                </button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="loading" class="loading">Cargando editoriales...</div>
+            <div id="error" class="error" style="display: none;"></div>
+            
+            <table id="editoriales-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Orden</th>
+                        <th style="width: 40px; text-align: center;" title="Progreso: Análisis + Notas + Párrafo + Envío">📊</th>
+                        <th>Nombre</th>
+                        <th>Grupo</th>
+                        <th>Bloque</th>
+                        <th>Estado</th>
+                        <th style="width: 60px; text-align: center;" title="Días desde envío">📅 Días</th>
+                        <th>Prioridad</th>
+                        <th>Probabilidad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="editoriales-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal para detalle de editorial -->
+    <div id="modal-detalle" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModalDetalle()">&times;</span>
+            <div id="modal-detalle-body">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para edición de editorial -->
+    <div id="modal-editar" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModalEditar()">&times;</span>
+            <div id="modal-editar-body">
+                <h2>✏️ Editar Editorial</h2>
+                <form id="form-editar" onsubmit="return false;">
+                    <input type="hidden" id="edit-id">
+                    
+                    <div class="form-section">
+                        <h3>📋 Información Básica</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Editorial:</label>
+                                <input type="text" id="edit-nombre" readonly class="readonly">
+                            </div>
+                            <div class="form-group">
+                                <label>Grupo:</label>
+                                <input type="text" id="edit-grupo" readonly class="readonly">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>🎯 Ordenamiento y Estado</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-bloque">Bloque: *</label>
+                                <select id="edit-bloque" required>
+                                    <option value="A">A - Envío prioritario inmediato</option>
+                                    <option value="B">B - Envío escalonado</option>
+                                    <option value="C">C - Solo si A y B no funcionan</option>
+                                    <option value="D">D - Descartar</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-orden">Orden:</label>
+                                <input type="number" id="edit-orden" placeholder="100, 200, 300...">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-estado">Estado: *</label>
+                                <select id="edit-estado" required>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="en-proceso">En proceso</option>
+                                    <option value="finalizado">Finalizado</option>
+                                    <option value="descartado">Descartado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>📅 Fechas</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-fecha-confeccion">Fecha confección:</label>
+                                <input type="date" id="edit-fecha-confeccion">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-fecha-envio">Fecha envío:</label>
+                                <input type="date" id="edit-fecha-envio">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-fecha-respuesta">Fecha respuesta:</label>
+                                <input type="date" id="edit-fecha-respuesta">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>📊 Resultado</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-resultado">Resultado:</label>
+                                <select id="edit-resultado">
+                                    <option value="">Sin resultado aún</option>
+                                    <option value="aceptada">✅ Aceptada</option>
+                                    <option value="rechazada">❌ Rechazada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>📝 Notas y Análisis</h3>
+                        <div class="form-group">
+                            <label for="edit-notas">Notas personales:</label>
+                            <textarea id="edit-notas" rows="4" placeholder="Cualquier observación o información relevante..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-analisis-manual">Párrafo personalizado para carta:</label>
+                            <textarea id="edit-analisis-manual" rows="3" placeholder="Ej: Esta obra podría encajar en Narrativas Hispánicas, junto a otros textos de ambición formal..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-feedback">Feedback de la editorial:</label>
+                            <textarea id="edit-feedback" rows="3" placeholder="Respuesta recibida de la editorial..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-aprendizajes">Aprendizajes:</label>
+                            <textarea id="edit-aprendizajes" rows="3" placeholder="Qué aprendiste de este proceso..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" onclick="verDetalleDesdeEdicion()" class="btn-secondary">👁️ Ver Detalle</button>
+                        <button type="button" onclick="closeModalEditar()" class="btn-secondary">Cancelar</button>
+                        <button type="button" onclick="guardarEdicion()" class="btn-primary">💾 Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de configuración -->
+    <div id="modal-config" class="modal">
+        <div class="modal-content modal-config-wide">
+            <span class="close" onclick="closeModalConfig()">&times;</span>
+            <h2>⚙️ Configuración</h2>
+            
+            <div class="config-section">
+                <h3>🤖 API Key de Anthropic</h3>
+                <p class="config-help">
+                    Para usar el análisis IA, necesitas una API key de Anthropic.<br>
+                    <a href="https://console.anthropic.com/" target="_blank">Obtener API key →</a>
+                </p>
+                
+                <div class="form-group">
+                    <label for="input-api-key">API Key:</label>
+                    <input type="password" id="input-api-key" 
+                           placeholder="sk-ant-api03-..." 
+                           autocomplete="off"
+                           class="input-api-key">
+                    <button type="button" id="btn-toggle-key" class="btn-toggle-key" onclick="toggleApiKeyVisibility()">
+                        👁️ Mostrar
+                    </button>
+                </div>
+                
+                <div id="api-key-status" class="api-key-status"></div>
+                
+                <div class="config-actions">
+                    <button onclick="testApiKey()" class="btn-secondary">🔍 Probar Conexión</button>
+                    <button onclick="guardarApiKey()" class="btn-primary">💾 Guardar</button>
+                    <button onclick="eliminarApiKey()" class="btn-danger">🗑️ Eliminar</button>
+                </div>
+                
+                <div class="config-info">
+                    <p><strong>ℹ️ Información:</strong></p>
+                    <ul>
+                        <li>Tu API key se guarda <strong>localmente en tu navegador</strong></li>
+                        <li>Nunca se envía al servidor ni se comparte</li>
+                        <li>Solo tú tienes acceso a ella</li>
+                        <li>Cada usuario debe configurar su propia key</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <h3>📝 Tu Manuscrito</h3>
+                <p class="config-help">
+                    Describe tu manuscrito para que el análisis IA sea más preciso y personalizado.
+                </p>
+                
+                <div class="form-group">
+                    <label for="input-manuscrito-desc">Descripción del manuscrito:</label>
+                    <textarea id="input-manuscrito-desc" rows="6" 
+                              placeholder="Ej: Novela literaria contemporánea en español que explora la memoria familiar durante el franquismo. Estilo intimista con toques de realismo mágico. 80.000 palabras. Referentes: Carmen Laforet, Cristina Fernández Cubas."
+                              class="input-manuscrito-desc"></textarea>
+                </div>
+
+                <div class="manuscrito-archivos">
+                    <label>📎 Archivos opcionales (para análisis más preciso):</label>
+                    
+                    <div class="archivo-upload">
+                        <div class="archivo-info">
+                            <strong>Sinopsis / Presentación</strong>
+                            <p class="archivo-help">Tu presentación editorial en formato TXT</p>
+                        </div>
+                        <input type="file" id="input-sinopsis" accept=".txt" style="display: none;">
+                        <button onclick="document.getElementById('input-sinopsis').click()" class="btn-upload">
+                            📄 Subir TXT
+                        </button>
+                        <div id="sinopsis-preview" class="archivo-preview"></div>
+                    </div>
+
+                    <div class="archivo-upload">
+                        <div class="archivo-info">
+                            <strong>Primeras páginas (opcional)</strong>
+                            <p class="archivo-help">Muestra de tu escritura en formato TXT</p>
+                        </div>
+                        <input type="file" id="input-muestra" accept=".txt" style="display: none;">
+                        <button onclick="document.getElementById('input-muestra').click()" class="btn-upload">
+                            📄 Subir TXT
+                        </button>
+                        <div id="muestra-preview" class="archivo-preview"></div>
+                    </div>
+                </div>
+
+                <div id="manuscrito-status" class="api-key-status"></div>
+
+                <div class="config-actions">
+                    <button onclick="guardarManuscrito()" class="btn-primary">💾 Guardar Manuscrito</button>
+                    <button onclick="limpiarManuscrito()" class="btn-secondary">🗑️ Limpiar</button>
+                </div>
+
+                <div class="config-info">
+                    <p><strong>💡 Cómo funciona:</strong></p>
+                    <ul>
+                        <li>La descripción se usa para <strong>personalizar cada análisis</strong></li>
+                        <li>Los archivos TXT se leen para <strong>entender mejor tu estilo y obra</strong></li>
+                        <li>El análisis evalúa si cada editorial es <strong>adecuada para TU manuscrito específico</strong></li>
+                        <li>Todo se guarda localmente en tu navegador</li>
+                        <li><strong>Formatos:</strong> Solo archivos .TXT (copia tu sinopsis/muestra a un archivo de texto)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de progreso análisis IA -->
+    <div id="modal-analisis-progreso" class="modal">
+        <div class="modal-content modal-progreso">
+            <h2>🤖 Analizando Editoriales con IA</h2>
+            <div id="progreso-container">
+                <p id="progreso-texto">Iniciando análisis...</p>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <p id="progreso-contador">0 / 0</p>
+                <div id="progreso-log" class="progreso-log"></div>
+            </div>
+            <button id="btn-cerrar-progreso" class="btn-secondary" style="display: none;" onclick="cerrarModalProgreso()">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para párrafo generado -->
+    <div id="modal-parrafo" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarModalParrafo()">&times;</span>
+            <h2>✍️ Párrafo Personalizado</h2>
+            <p id="parrafo-editorial-nombre" style="color: #666; margin-bottom: 20px;"></p>
+            <div id="parrafo-content" style="background: #f8f9fa; padding: 20px; border-radius: 8px; line-height: 1.8; font-size: 15px; margin-bottom: 20px;">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label for="instrucciones-refinamiento" style="display: block; margin-bottom: 8px; font-weight: 600; color: #666;">
+                    💬 Instrucciones de refinamiento (opcional):
+                </label>
+                <textarea 
+                    id="instrucciones-refinamiento" 
+                    rows="3" 
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; resize: vertical;"
+                    placeholder="Ej: El autor Marta Sanz SÍ publica aquí. Hazlo más corto. Menciona la colección Heterodoxos. Usa un tono más directo."></textarea>
+            </div>
+            
+            <input type="hidden" id="parrafo-editorial-id">
+            <button onclick="refinarParrafo()" class="btn-secondary" style="margin-right: 10px;">🔄 Refinar</button>
+            <button onclick="copiarParrafo()" class="btn-primary">📋 Copiar</button>
+            <button onclick="guardarParrafo()" class="btn-primary">💾 Guardar</button>
+            <button onclick="cerrarModalParrafo()" class="btn-secondary">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Modal de estadísticas de bloques -->
+    <div id="modal-bloques-stats" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarModalBloques()">&times;</span>
+            <h2>📊 Bloques Asignados Automáticamente</h2>
+            
+            <div id="bloques-stats-content" class="bloques-stats-content"></div>
+            
+            <button onclick="cerrarModalBloques()" class="btn-primary">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para crear nueva editorial -->
+    <div id="modal-nueva-editorial" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModalNuevaEditorial()">&times;</span>
+            <h2>➕ Nueva Editorial</h2>
+            
+            <form id="form-nueva-editorial" onsubmit="guardarNuevaEditorial(event)">
+                <div class="form-section">
+                    <h3>Información Básica</h3>
+                    
+                    <div class="form-group">
+                        <label for="nueva-nombre">Nombre *</label>
+                        <input type="text" id="nueva-nombre" required 
+                               placeholder="Ej: Editorial Impedimenta">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nueva-web">Web *</label>
+                        <input type="url" id="nueva-web" required 
+                               placeholder="https://editorial.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nueva-grupo">Grupo Editorial</label>
+                        <input type="text" id="nueva-grupo" 
+                               placeholder="Ej: Independiente, Planeta, PRH...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nueva-email">Email</label>
+                        <input type="email" id="nueva-email" 
+                               placeholder="contacto@editorial.com">
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <label>
+                        <input type="checkbox" id="nueva-analizar" checked>
+                        Analizar con IA al crear (recomendado)
+                    </label>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                        Si está activado, se analizará la editorial automáticamente 
+                        y se asignará al bloque correspondiente según su prioridad.
+                    </p>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="btn-primary">💾 Crear Editorial</button>
+                    <button type="button" onclick="closeModalNuevaEditorial()" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast para notificaciones -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Librería PDF.js para extracción de texto -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
