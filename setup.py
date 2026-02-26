@@ -23,12 +23,12 @@ def init_project():
     # Paths
     base_dir = os.path.dirname(os.path.abspath(__file__))
     db_path = os.path.join(base_dir, 'data', 'editoriales.db')
-    docx_path = os.path.join(base_dir, 'data', 'editoriales01.docx')
-    
+    docx_path = os.path.join(base_dir, 'data', 'editoriales.docx')
+
     # Verificar que existe el Word
     if not os.path.exists(docx_path):
         print(f"❌ ERROR: No se encuentra el archivo {docx_path}")
-        print("   Por favor, coloca el archivo editoriales01.docx en el directorio 'data/'")
+        print("   Por favor, renombra tu documento a 'editoriales.docx' y colócalo en 'data/'")
         return False
     
     # Eliminar base de datos existente si existe

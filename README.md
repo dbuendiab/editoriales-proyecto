@@ -28,7 +28,8 @@ git clone https://github.com/tu-usuario/editoriales-proyecto.git
 cd editoriales-proyecto
 
 # 2. Prepara tu documento de editoriales
-#    Edita data/editoriales-sample.docx con tus propias editoriales
+#    El repo incluye data/editoriales.docx con 10 editoriales de ejemplo.
+#    Edítalo o sustitúyelo con tus propias editoriales antes de continuar.
 #    (ver sección "Formato del documento" más abajo)
 
 # 3. Copia el archivo de configuración y añade tu API key
@@ -71,7 +72,7 @@ Abre http://localhost:5000 en tu navegador.
 
 ## Formato del documento de editoriales
 
-El archivo `data/editoriales-sample.docx` incluye 10 editoriales ficticias que ilustran el formato esperado. Sustitúyelo o amplíalo con tus propias editoriales antes de ejecutar el instalador.
+El archivo `data/editoriales.docx` incluye 10 editoriales ficticias que ilustran el formato esperado. Edítalo o sustitúyelo con tus propias editoriales **antes de ejecutar el instalador** (`setup.py`). El instalador busca exactamente ese nombre — si tu documento tiene otro nombre, renómbralo a `editoriales.docx`.
 
 Cada editorial ocupa un bloque de texto separado por al menos dos líneas en blanco, con estas etiquetas:
 
