@@ -100,6 +100,7 @@ async function loadStats() {
             <span><strong>Con análisis IA:</strong> ${stats.con_analisis_ia || 0}</span>
             <span><strong>Pendientes:</strong> ${stats.por_estado?.pendiente || 0}</span>
             <span><strong>En proceso:</strong> ${stats.por_estado?.['en-proceso'] || 0}</span>
+            <span><strong>En evaluación:</strong> ${stats.por_estado?.['en-evaluacion'] || 0}</span>
             <span><strong>Finalizadas:</strong> ${stats.por_estado?.finalizado || 0}</span>
         `;
         
@@ -205,6 +206,7 @@ function formatEstado(estado) {
     const estados = {
         'pendiente': 'Pendiente',
         'en-proceso': 'En proceso',
+        'en-evaluacion': 'En evaluación',
         'finalizado': 'Finalizado',
         'descartado': 'Descartado'
     };
