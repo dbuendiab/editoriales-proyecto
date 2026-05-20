@@ -69,3 +69,9 @@ instance/
 
 # Claude Code
 .claude/
+CLAUDE.RESUME
+claude-resume.txt
+
+# Scripts de utilidad local (no versionar)
+sql_adhoc.py
+update_orden_bloque_b.py
