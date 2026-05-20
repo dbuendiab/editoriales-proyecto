@@ -1656,7 +1656,7 @@ async function guardarNuevaEditorial(event) {
     // Si se va a analizar, necesitamos API key y manuscrito
     if (data.analizar) {
         const apiKey = localStorage.getItem('anthropic_api_key');
-        const manuscritoConfig = JSON.parse(localStorage.getItem('manuscrito_config') || '{}');
+        const manuscritoConfig = getManuscritoData();
         
         if (!apiKey) {
             showToast('Para analizar con IA necesitas configurar la API key en Configuración', 'error');
